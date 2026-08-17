@@ -309,10 +309,10 @@ function motorDeMatching(perfumes, filtros) {
   return puntuados.slice(0, 5);
 }
 
-export default function Estela() {
+export default function Estela({ initialPagina = "sommelier" }) {
 
   // Navegación principal
-  const [pagina, setPagina] = useState("sommelier"); // sommelier | guia | comunidad
+  const [pagina, setPagina] = useState(initialPagina); // sommelier | guia | comunidad
 
   // Estado del sommelier
   const [pantalla, setPantalla] = useState("landing");
