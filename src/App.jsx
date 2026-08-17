@@ -383,6 +383,16 @@ export default function Estela({ initialPagina = "sommelier" }) {
           --cuerpo: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
           --dato: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
 
+          /* Escala de densidad — se redefine en cada breakpoint.
+             Todo lo que respira bebe de aquí, así el ajuste fino
+             de móvil o desktop se hace en un solo sitio. */
+          --shell:    1120px;
+          --pad-x:    32px;
+          --pad-top:  128px;
+          --nav-h:    56px;
+          --fs-body:  16px;
+          --gap-tras-apunte: 54px;
+
           position: relative;
           min-height: 100vh;
           background: var(--ink);
@@ -414,21 +424,24 @@ export default function Estela({ initialPagina = "sommelier" }) {
         .es-nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 10;
           display: flex; align-items: center; justify-content: space-between;
-          padding: 0 32px; height: 52px;
-          background: rgba(14,10,9,0.88); backdrop-filter: blur(10px);
+          padding: 0 var(--pad-x); height: var(--nav-h);
+          background: rgba(14,10,9,0.92); backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
-          border-bottom: 0.5px solid var(--linea);
+          border-bottom: 1px solid rgba(234,227,215,0.11);
         }
+        /* El logo es serif con cuerpo; los enlaces son mono, pequeños y
+           apagados. La separación la hace la jerarquía, no un tabique. */
         .es-nav-logo {
-          font-family: var(--dato); font-size: 11px; letter-spacing: 0.34em;
-          text-transform: uppercase; color: var(--hueso-mute);
+          font-family: var(--display); font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 40;
+          font-size: 20px; font-weight: 600; letter-spacing: 0.055em;
+          color: var(--hueso); line-height: 1;
           background: none; border: 0; cursor: pointer; padding: 0;
           transition: color 380ms ease;
         }
-        .es-nav-logo:hover { color: var(--hueso); }
-        .es-nav-links { display: flex; gap: 28px; align-items: center; }
+        .es-nav-logo:hover { color: var(--oro-lit); }
+        .es-nav-links { display: flex; gap: 30px; align-items: center; }
         .es-nav-link {
-          font-family: var(--dato); font-size: 10px; letter-spacing: 0.18em;
+          font-family: var(--dato); font-size: 10px; letter-spacing: 0.2em;
           text-transform: uppercase; color: var(--hueso-mute); background: none;
           border: 0; cursor: pointer; padding: 4px 0; position: relative;
           transition: color 380ms ease;
@@ -466,11 +479,13 @@ export default function Estela({ initialPagina = "sommelier" }) {
         /* Páginas de contenido (modo lectura claro) */
         .es-pagina-clara {
           background: #F2EDE4; min-height: 100vh; color: #2C2118;
-          padding: 76px 32px 60px;
+          padding: calc(var(--nav-h) + 34px) var(--pad-x) 60px;
         }
         .es-pagina-clara .es-contenedor {
           max-width: 780px; margin: 0 auto;
         }
+        .es-pagina-clara .es-articulo-card p,
+        .es-pagina-clara .es-red-card p { font-size: var(--fs-body); }
         .es-pagina-clara h1 {
           font-family: var(--display); font-weight: 300; font-size: clamp(30px, 5vw, 42px);
           line-height: 1.08; letter-spacing: -0.02em; color: #1A1410; margin: 0 0 12px;
@@ -522,7 +537,31 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
         .es-escenario {
           min-height: 100vh; display: flex; flex-direction: column;
-          justify-content: center; padding: 108px 32px 72px; max-width: 1120px; margin: 0 auto;
+          justify-content: center; padding: var(--pad-top) var(--pad-x) 72px;
+          max-width: var(--shell); margin: 0 auto;
+        }
+
+        /* DOS COLUMNAS EN DESKTOP — la pregunta se queda fija a la
+           izquierda mientras se responde a la derecha. Es lo que llena
+           el ancho sin inventar decoración para rellenarlo. */
+        @media (min-width: 1024px) {
+          .es-escena-2col {
+            display: grid;
+            grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1.18fr);
+            column-gap: 76px;
+            align-content: center;
+          }
+          .es-escena-2col > .es-guia {
+            grid-column: 1; grid-row: 1 / span 40;
+            align-self: start; position: sticky; top: calc(var(--nav-h) + 64px);
+          }
+          .es-escena-2col > *:not(.es-guia) { grid-column: 2; }
+          .es-escena-2col .es-apunte { margin-bottom: 0; }
+          .es-escena-2col > *:not(.es-guia) + *:not(.es-guia) { margin-top: 26px; }
+          /* Dentro de la columna derecha las rejillas van a 2 columnas:
+             cuatro celdas estrechas se leerían como una barra de iconos. */
+          .es-escena-2col .es-rejilla,
+          .es-escena-2col .es-rejilla-familias { grid-template-columns: repeat(2, 1fr); }
         }
 
         .es-entra { animation: entra 620ms cubic-bezier(.22,.61,.36,1) both; }
@@ -564,8 +603,10 @@ export default function Estela({ initialPagina = "sommelier" }) {
           color: var(--hueso-mute); margin: 0;
         }
 
+        /* La escalera vivía a 30px del borde, es decir, detrás de la
+           barra fija de 52px. Ahora arranca justo por debajo. */
         .es-escalera {
-          position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 4;
+          position: absolute; top: calc(var(--nav-h) + 20px); left: 50%; transform: translateX(-50%); z-index: 4;
           display: flex; flex-direction: row; gap: 18px; align-items: center;
           padding: 8px 22px; background: rgba(14,10,9,0.55); backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px); border: 1px solid var(--linea);
@@ -690,8 +731,8 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
         /* --- TABLET: hasta 860px --- */
         @media (max-width: 860px) {
+          .es-root { --pad-x: 24px; --pad-top: 120px; }
           .es-carta { grid-template-columns: 1fr; gap: 36px; }
-          .es-escenario { padding: 92px 22px 60px; }
           .es-marca { left: 22px; }
           .es-par { grid-template-columns: 1fr; gap: 28px; }
           .es-escalera { padding: 6px 14px; gap: 10px; }
@@ -701,6 +742,20 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
         /* --- MÓVIL: hasta 560px --- */
         @media (max-width: 560px) {
+          /* Menos aire exterior, cuerpo de texto más grande, interlineado
+             más corto. Es lo contrario de lo habitual y es justo lo que
+             da densidad: el texto pequeño con mucho aire lee a formulario,
+             el texto grande con poco aire lee a página impresa. */
+          .es-root {
+            --pad-x: 16px;
+            --pad-top: 96px;
+            --nav-h: 52px;
+            --fs-body: 17px;
+            --gap-tras-apunte: 30px;
+          }
+          .es-nav-logo { font-size: 18px; letter-spacing: 0.05em; }
+          .es-nav-links { gap: 20px; }
+          .es-nav-link { font-size: 9.5px; letter-spacing: 0.14em; }
           .es-marca {
             top: 20px; left: 20px;
             font-size: 10px; letter-spacing: 0.28em;
@@ -714,10 +769,8 @@ export default function Estela({ initialPagina = "sommelier" }) {
           .es-peldano.on span.rule { width: 14px; }
           .es-peldano-sep { height: 7px; }
 
-          .es-escenario {
-            padding: 76px 20px 40px;
-            min-height: auto;
-          }
+          .es-escenario { min-height: auto; padding-bottom: 40px; }
+          .es-apunte { margin-bottom: var(--gap-tras-apunte); }
           .es-halo {
             top: -20vh; width: 180vw; height: 70vh;
           }
@@ -730,7 +783,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
             font-size: clamp(24px, 6.5vw, 32px);
             line-height: 1.15;
           }
-          .es-bajada, .es-apunte { font-size: 15px; }
+          .es-bajada, .es-apunte { font-size: var(--fs-body); line-height: 1.58; }
           .es-eyebrow { font-size: 10px; letter-spacing: 0.22em; margin-bottom: 20px; }
 
           /* Botones táctiles: 44px mínimo de altura */
@@ -764,7 +817,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
             transform: scale(0.97);
           }
           .es-familia h3 { font-size: 18px; }
-          .es-familia p { font-size: 10.5px; line-height: 1.55; opacity: 0.85; }
+          .es-familia p { font-size: 11px; line-height: 1.5; opacity: 0.85; }
           .es-familia svg { width: 40px; height: 40px; }
 
           /* La rejilla de familias (6 opciones) también en 2 columnas
@@ -793,18 +846,18 @@ export default function Estela({ initialPagina = "sommelier" }) {
           .es-campo { font-size: 22px; padding: 12px 0; }
           .es-sugieres button { padding: 6px 12px; font-size: 10px; }
 
-          /* Carta de resultado: apilada, con más aire vertical */
-          .es-carta { padding: 36px 0; gap: 28px; }
-          .es-nombre { font-size: clamp(26px, 6vw, 32px); }
-          .es-voz { font-size: 16px; margin-top: 22px; }
+          /* Carta de resultado: apilada y más compacta */
+          .es-carta { padding: 30px 0; gap: 22px; }
+          .es-nombre { font-size: clamp(27px, 6.4vw, 33px); }
+          .es-voz { font-size: var(--fs-body); line-height: 1.55; margin-top: 18px; }
           .es-casa { font-size: 9px; letter-spacing: 0.22em; }
 
           /* Trail: bandas y notas más compactas */
-          .es-trail { gap: 14px; margin-top: 28px; align-items: stretch; }
+          .es-trail { gap: 14px; margin-top: 22px; align-items: stretch; }
           .es-columna { width: 4px; display: flex; flex-direction: column; }
           .es-fase-cab { font-size: 9px; letter-spacing: 0.16em; }
           .es-fase-cab b { font-size: 10px; }
-          .es-fase-notas { font-size: 13px; }
+          .es-fase-notas { font-size: 14px; line-height: 1.45; }
           /* En móvil las fases se reparten proporcionalmente el alto real
              del bloque, y las bandas de color se estiran con ellas */
           .es-fases { min-height: 0; flex: 1; }
@@ -828,7 +881,8 @@ export default function Estela({ initialPagina = "sommelier" }) {
           }
 
           /* Pie de página */
-          .es-pie { margin-top: 40px; padding: 26px 0 0; flex-direction: column; align-items: flex-start; gap: 22px; }
+          .es-pie { margin-top: 32px; padding: 24px 0 0; flex-direction: column; align-items: flex-start; gap: 18px; }
+          .es-pagina-clara { padding: calc(var(--pad-top) - 24px) var(--pad-x) 48px; }
 
           /* Filas de botones: apiladas verticalmente para llegar bien con el pulgar */
           section .es-btn + .es-btn,
@@ -839,10 +893,15 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
         /* --- MÓVIL PEQUEÑO: hasta 380px --- */
         @media (max-width: 380px) {
+          .es-root { --pad-x: 14px; --fs-body: 16px; --gap-tras-apunte: 24px; }
           .es-rejilla { grid-template-columns: 1fr; }
           .es-rejilla-familias { grid-template-columns: 1fr 1fr; }
           .es-titular { font-size: 30px; }
-          .es-escenario { padding: 70px 18px 32px; }
+          .es-nav-logo { font-size: 17px; }
+          .es-nav-links { gap: 14px; }
+          .es-nav-link { font-size: 9px; letter-spacing: 0.1em; }
+          .es-escenario { padding-bottom: 32px; }
+          .es-familia { padding: 20px 14px 18px; }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -864,7 +923,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
       <nav className="es-nav">
         <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>
-          Estela
+          Efluvio
         </button>
         <div className="es-nav-links">
           <button
@@ -927,13 +986,15 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "genero" && (
-          <section className="es-escenario" key="genero">
+          <section className="es-escenario es-escena-2col" key="genero">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 01 — Género</p>
             <h2 className="es-pregunta es-entra">¿Para quién buscamos?</h2>
             <p className="es-apunte es-entra-2">
               No es una casilla que te encierre, es solo para no enseñarte 200
               perfumes que no te interesan. Puedes cambiarlo cuando quieras.
             </p>
+            </div>
 
             <div className="es-rejilla es-entra-3">
               {[
@@ -1001,13 +1062,15 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "presupuesto" && (
-          <section className="es-escenario" key="presupuesto">
+          <section className="es-escenario es-escena-2col" key="presupuesto">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 02 — Presupuesto</p>
             <h2 className="es-pregunta es-entra">¿Cuánto quieres gastarte?</h2>
             <p className="es-apunte es-entra-2">
               Es un techo, no un objetivo. Nada de lo que te enseñemos después pasará
               de aquí.
             </p>
+            </div>
 
             <div className="es-entra-3" style={{ maxWidth: 620 }}>
               <div className="es-cifra">
@@ -1045,13 +1108,15 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "familia" && (
-          <section className="es-escenario" key="familia">
+          <section className="es-escenario es-escena-2col" key="familia">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 03 — Familia olfativa</p>
             <h2 className="es-pregunta es-entra">¿Hacia dónde tira tu nariz?</h2>
             <p className="es-apunte es-entra-2">
               Elige todas las que te suenen bien. Si no tienes ni idea, sáltalo: lo
               deducimos del resto de respuestas.
             </p>
+            </div>
 
             <div className="es-rejilla es-rejilla-familias es-entra-3">
               {FAMILIAS.map((f) => (
@@ -1084,13 +1149,15 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "ocasion" && (
-          <section className="es-escenario" key="ocasion">
+          <section className="es-escenario es-escena-2col" key="ocasion">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 04 — Cuándo lo vas a llevar</p>
             <h2 className="es-pregunta es-entra">¿Para qué momento?</h2>
             <p className="es-apunte es-entra-2">
               Los perfumes tienen contexto. Uno que funciona en agosto por la mañana
               no funciona en enero por la noche, por muy bueno que sea.
             </p>
+            </div>
 
             <div className="es-par es-entra-3">
               <div>
@@ -1149,7 +1216,8 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "intensidad" && (
-          <section className="es-escenario" key="intensidad">
+          <section className="es-escenario es-escena-2col" key="intensidad">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 05 — Intensidad</p>
             <h2 className="es-pregunta es-entra">¿Cuánto quieres que se note?</h2>
             <p className="es-apunte es-entra-2">
@@ -1157,6 +1225,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
               caro como uno que llena una habitación. Aquí es solo cuestión de
               gusto y de cómo lo quieres llevar.
             </p>
+            </div>
 
             <div className="es-entra-3" style={{ maxWidth: 640 }}>
               <div className="es-medida">
@@ -1208,7 +1277,8 @@ export default function Estela({ initialPagina = "sommelier" }) {
         )}
 
         {pantalla === "ancla" && (
-          <section className="es-escenario" key="ancla">
+          <section className="es-escenario es-escena-2col" key="ancla">
+            <div className="es-guia">
             <p className="es-eyebrow es-entra">Paso 06 — Un ancla, si quieres</p>
             <h2 className="es-pregunta es-entra">¿Hay algún perfume que ya te enamore?</h2>
             <p className="es-apunte es-entra-2">
@@ -1216,6 +1286,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
               deducimos tu gusto de algo real. Si no, salta al final: con lo que
               nos has dicho ya tenemos lo suficiente.
             </p>
+            </div>
 
             <div className="es-entra-3" style={{ maxWidth: 620 }}>
               <input
@@ -1443,7 +1514,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
             <div className="es-pie es-entra-4">
               <p className="es-susurro" style={{ maxWidth: "58ch", lineHeight: 1.8 }}>
-                Estela cobra una comisión si compras a través de estos enlaces. No
+                Efluvio cobra una comisión si compras a través de estos enlaces. No
                 cambia lo que pagas ni el orden en que aparecen los resultados.
               </p>
               <button className="es-btn es-btn-fantasma" onClick={() => { setGenero(null); setModo("diseñador"); setPantalla("landing"); }}>
@@ -1461,7 +1532,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
     <div className="es-root">
       <style>{estilosCompartidos}</style>
       <nav className="es-nav">
-        <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>Estela</button>
+        <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>Efluvio</button>
         <div className="es-nav-links">
           <button className="es-nav-link" onClick={() => setPagina("sommelier")}>Sommelier</button>
           <button className="es-nav-link on" onClick={() => setPagina("guia")}>Guía</button>
@@ -1473,7 +1544,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
           <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.24em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 20px" }}>
             Biblioteca de perfumería
           </p>
-          <h1>Artículos Estela</h1>
+          <h1>Artículos Efluvio</h1>
           <p className="es-intro">
             Artículos escritos con criterio, no con patrocinio. Cada uno incluye comparativa de precios real y la voz de nuestro sommelier.
           </p>
@@ -1545,7 +1616,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
     <div className="es-root">
       <style>{estilosCompartidos}</style>
       <nav className="es-nav">
-        <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>Estela</button>
+        <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>Efluvio</button>
         <div className="es-nav-links">
           <button className="es-nav-link" onClick={() => setPagina("sommelier")}>Sommelier</button>
           <button className="es-nav-link" onClick={() => setPagina("guia")}>Guía</button>
@@ -1557,7 +1628,7 @@ export default function Estela({ initialPagina = "sommelier" }) {
           <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.24em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 20px" }}>
             Donde hablamos de perfumes
           </p>
-          <h1>Comunidad Estela</h1>
+          <h1>Comunidad Efluvio</h1>
           <p className="es-intro">
             Clones de la semana, comparativas de precio y contenido que no encontrarás en ninguna revista.
           </p>
