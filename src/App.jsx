@@ -312,7 +312,10 @@ function motorDeMatching(perfumes, filtros) {
 export default function Estela({ initialPagina = "sommelier" }) {
 
   // Navegación principal
-  const [pagina, setPagina] = useState(initialPagina); // sommelier | guia | comunidad
+  const [pagina, setPagina] = useState(initialPagina); 
+  const [articulos, setArticulos] = useState([]);
+const [cargandoArticulos, setCargandoArticulos] = useState(false);
+  // sommelier | guia | comunidad
 
   // Estado del sommelier
   const [pantalla, setPantalla] = useState("landing");
@@ -358,6 +361,23 @@ export default function Estela({ initialPagina = "sommelier" }) {
     }
   }, [pantalla, perfumes.length, cargarPerfumes]);
 
+  useEffect(function () {
+  if (pagina === "guia" && articulos.length === 0) {
+    setCargandoArticulos(true);
+    supabase
+      .from("articulos")
+      .select("slug, titulo, descripcion_corta, categoria, minutos_lectura, fecha_publicacion, tags")
+      .eq("estado", "publicado")
+      .order("fecha_publicacion", { ascending: false })
+      .then(function (resultado) {
+        if (!resultado.error) {
+          setArticulos(resultado.data || []);
+        }
+        setCargandoArticulos(false);
+      });
+  }
+}, [pagina, articulos.length]);
+
   const pasoActivo =
     pantalla === "genero" ? 0 :
     pantalla === "presupuesto" ? 1 :
@@ -368,25 +388,6 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
   const estilosCompartidos = `
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-        /* ---------------------------------------------------------
-           RESET DE LA PLANTILLA DE VITE
-           Vite crea todo proyecto nuevo con index.css y App.css que
-           encajonan la app en 1280px centrados y centran el texto.
-           Efluvio va a sangre completa, así que se anula aquí.
-           --------------------------------------------------------- */
-        html, body {
-          margin: 0; padding: 0; width: 100%;
-          background: #0E0A09;
-          text-align: left;
-        }
-        body { display: block; place-items: normal; min-width: 0; }
-        #root {
-          max-width: none; width: 100%;
-          margin: 0; padding: 0;
-          display: block; place-items: normal;
-          text-align: left;
-        }
 
         .es-root {
           --ink: #0E0A09;
@@ -424,30 +425,18 @@ export default function Estela({ initialPagina = "sommelier" }) {
         .es-root *, .es-root *::before, .es-root *::after { box-sizing: border-box; }
 
         .es-halo {
-          position: fixed; inset: 0; pointer-events: none; z-index: 0;
-          background:
-            radial-gradient(122% 82% at 50% -16%,
-              rgba(110,33,53,0.46) 0%,
-              rgba(99,29,47,0.31) 24%,
-              rgba(74,18,32,0.155) 44%,
-              rgba(52,16,24,0.06) 62%,
-              rgba(20,10,12,0.015) 78%,
-              transparent 92%),
-            radial-gradient(90% 60% at 50% 116%,
-              rgba(74,18,32,0.20) 0%,
-              rgba(58,16,26,0.07) 40%,
-              transparent 74%);
+          position: absolute; top: -30vh; left: 50%; transform: translateX(-50%);
+          width: 120vw; height: 90vh; pointer-events: none; z-index: 0;
+          background: radial-gradient(ellipse at center, rgba(110,33,53,0.40) 0%, rgba(74,18,32,0.12) 42%, transparent 68%);
           animation: respirar 22s ease-in-out infinite;
         }
-        /* Solo opacidad: escalar un degradado a sangre completa reintroduce
-           el canto que estamos evitando. */
         @keyframes respirar {
-          0%,100% { opacity: .88; }
-          50%     { opacity: 1; }
+          0%,100% { opacity: .85; transform: translateX(-50%) scale(1); }
+          50%     { opacity: 1;   transform: translateX(-50%) scale(1.08); }
         }
         .es-grano {
-          position: fixed; inset: 0; pointer-events: none; z-index: 1;
-          background-image: ${GRANO}; opacity: 0.065; mix-blend-mode: overlay;
+          position: absolute; inset: 0; pointer-events: none; z-index: 1;
+          background-image: ${GRANO}; opacity: 0.05; mix-blend-mode: overlay;
         }
         .es-capa { position: relative; z-index: 2; }
 
@@ -760,12 +749,6 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
         .es-pie { border-top: 1px solid var(--linea); margin-top: 56px; padding: 34px 0 0; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
 
-        /* --- MONITOR ANCHO: desde 1440px --- */
-        @media (min-width: 1440px) {
-          .es-root { --shell: 1240px; --pad-x: 48px; }
-          .es-escena-2col { column-gap: 92px; }
-        }
-
         /* --- TABLET: hasta 860px --- */
         @media (max-width: 860px) {
           .es-root { --pad-x: 24px; --pad-top: 120px; }
@@ -808,6 +791,9 @@ export default function Estela({ initialPagina = "sommelier" }) {
 
           .es-escenario { min-height: auto; padding-bottom: 40px; }
           .es-apunte { margin-bottom: var(--gap-tras-apunte); }
+          .es-halo {
+            top: -20vh; width: 180vw; height: 70vh;
+          }
 
           .es-titular {
             font-size: clamp(30px, 9vw, 44px);
@@ -1562,89 +1548,73 @@ export default function Estela({ initialPagina = "sommelier" }) {
     )}
 
     {/* =============== PÁGINA: GUÍA =============== */}
-    {pagina === "guia" && (
+          {pagina === "guia" && (
     <div className="es-root">
       <style>{estilosCompartidos}</style>
       <nav className="es-nav">
         <button className="es-nav-logo" onClick={() => { setPagina("sommelier"); setPantalla("landing"); }}>Efluvio</button>
         <div className="es-nav-links">
           <button className="es-nav-link" onClick={() => setPagina("sommelier")}>Sommelier</button>
-          <button className="es-nav-link on" onClick={() => setPagina("guia")}>Guía</button>
+          <button className="es-nav-link on" onClick={() => setPagina("guia")}>Artículos</button>
           <button className="es-nav-link" onClick={() => setPagina("comunidad")}>Comunidad</button>
         </div>
       </nav>
       <div className="es-pagina-clara">
         <div className="es-contenedor">
           <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.24em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 20px" }}>
-            Biblioteca de perfumería
+            Biblioteca de perfumeria
           </p>
-          <h1>Artículos Efluvio</h1>
+          <h1>Articulos Efluvio</h1>
           <p className="es-intro">
-            Artículos escritos con criterio, no con patrocinio. Cada uno incluye comparativa de precios real y la voz de nuestro sommelier.
+            Articulos escritos con criterio, no con patrocinio. Cada uno incluye la voz de nuestro sommelier.
           </p>
 
-          <div
-            className="es-articulo-card"
-            onClick={() => window.open("/guia/mejores-perfumes-hombre", "_blank")}
-          >
-            <h3>Los mejores perfumes de hombre en 2026</h3>
-            <p>
-              Con comparativa de precio real entre Sephora, Druni y Amazon. Sin patrocinios, sin ordenar por comisión. El más barato, arriba.
-            </p>
-            <div className="es-meta">
-              Agosto 2026 · 8 min · 7 perfumes analizados
-            </div>
-          </div>
+          {cargandoArticulos && (
+            <p style={{ color: "#8A7E72", fontFamily: "var(--dato)", fontSize: 13 }}>Cargando articulos...</p>
+          )}
 
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Equivalencias de Dior Sauvage: todos los clones probados</h3>
-            <p>
-              De Armaf Ventana a Zara Seoul: cuáles se parecen de verdad y cuáles son humo. Con pirámide de notas y comparativa.
-            </p>
-            <div className="es-meta">
-              Próximamente
-            </div>
-          </div>
+          {!cargandoArticulos && articulos.length === 0 && (
+            <p style={{ color: "#8A7E72", fontSize: 15 }}>No hay articulos publicados todavia.</p>
+          )}
 
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Perfumería de nicho: guía para principiantes</h3>
-            <p>
-              Qué es un perfume de nicho, por qué cuesta lo que cuesta, y 5 recomendaciones para empezar sin arruinarte.
-            </p>
-            <div className="es-meta">
-              Próximamente
-            </div>
-          </div>
-
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Los 5 mejores perfumes para regalar en Navidad 2026</h3>
-            <p>
-              Selección por presupuesto (30€, 60€, 100€, 150€+) con el comparador de precios integrado.
-            </p>
-            <div className="es-meta">
-              Noviembre 2026
-            </div>
-          </div>
+          {articulos.map(function (art) {
+            var fecha = art.fecha_publicacion
+              ? new Date(art.fecha_publicacion).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+              : "";
+            return (
+              <div
+                key={art.slug}
+                className="es-articulo-card"
+                onClick={function () { window.location.href = "/guia/" + art.slug; }}
+                style={{ cursor: "pointer" }}
+              >
+                <h3>{art.titulo}</h3>
+                <p>{art.descripcion_corta}</p>
+                <div className="es-meta">
+                  {fecha} {art.minutos_lectura ? "· " + art.minutos_lectura + " min" : ""}
+                </div>
+              </div>
+            );
+          })}
 
           <div style={{ marginTop: 40, padding: "20px 24px", background: "#EDE7DC", borderLeft: "2.5px solid #C99A4E" }}>
             <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 8px" }}>
-              ¿No sabes cuál elegir?
+              No sabes cual elegir?
             </p>
             <p style={{ fontSize: 15, lineHeight: 1.65, color: "#2C2118", margin: "0 0 12px" }}>
-              El sommelier te recomienda según tu presupuesto, la temporada y lo que ya te gusta.
+              El sommelier te recomienda segun tu presupuesto, la temporada y lo que ya te gusta.
             </p>
             <button
               style={{ fontFamily: "var(--dato)", fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: "#C99A4E", background: "none", border: 0, cursor: "pointer", padding: 0 }}
-              onClick={() => setPagina("sommelier")}
+              onClick={function () { setPagina("sommelier"); }}
             >
-              Probar el sommelier →
+              Probar el sommelier
             </button>
           </div>
         </div>
       </div>
     </div>
-    )}
-
+    )} 
     {/* =============== PÁGINA: COMUNIDAD =============== */}
     {pagina === "comunidad" && (
     <div className="es-root">
