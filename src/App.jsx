@@ -568,17 +568,17 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           padding-bottom: 3px;
         }
 
-        /* Botón instalar app en la barra de navegación */
+        /* Botón instalar app — vive dentro de la landing, no en la barra */
         .es-instalar {
-          font-family: var(--dato); font-size: 9.5px; letter-spacing: 0.16em;
+          font-family: var(--dato); font-size: 11px; letter-spacing: 0.16em;
           text-transform: uppercase; color: var(--oro);
           background: transparent; border: 1px solid rgba(201,154,78,0.4);
-          padding: 7px 13px; cursor: pointer; border-radius: 0;
-          display: inline-flex; align-items: center; gap: 7px;
+          padding: 12px 20px; cursor: pointer; border-radius: 0;
+          display: inline-flex; align-items: center; gap: 9px;
           transition: background 380ms ease, border-color 380ms ease, color 380ms ease;
         }
         .es-instalar:hover { background: rgba(201,154,78,0.09); border-color: var(--oro); color: var(--oro-lit); }
-        .es-instalar svg { width: 12px; height: 12px; }
+        .es-instalar svg { width: 14px; height: 14px; }
 
         /* Modal de ayuda para instalación en iOS */
         .es-ios-fondo {
@@ -1102,14 +1102,6 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           >
             Comunidad
           </button>
-          {puedeInstalar && (
-            <button className="es-instalar" onClick={instalarApp} aria-label="Instalar Efluvio como app">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" />
-              </svg>
-              Instalar
-            </button>
-          )}
         </div>
       </nav>
 
@@ -1162,6 +1154,17 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
               </button>
               <p className="es-susurro">30 segundos · 4 tiendas comparadas · sin registro</p>
             </div>
+
+            {puedeInstalar && (
+              <div className="es-entra-4" style={{ marginTop: 34 }}>
+                <button className="es-instalar" onClick={instalarApp} aria-label="Instalar Efluvio como app">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" />
+                  </svg>
+                  Instalar como app
+                </button>
+              </div>
+            )}
           </section>
         )}
 
