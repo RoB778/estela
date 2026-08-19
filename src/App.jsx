@@ -1090,7 +1090,7 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
             className={`es-nav-link ${pagina === "guia" ? "on" : ""}`}
             onClick={() => setPagina("guia")}
           >
-            Artículos
+            Guía
           </button>
           <button
             className={`es-nav-link ${pagina === "comunidad" ? "on" : ""}`}
