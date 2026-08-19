@@ -371,30 +371,6 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
   const [mostrarAyudaIOS, setMostrarAyudaIOS] = useState(false);
 
   useEffect(() => {
-    // Inyecta un manifest mínimo generado al vuelo, sin necesitar
-    // un archivo manifest.json externo en /public.
-    const manifest = {
-      name: "Efluvio — Sommelier de perfumería",
-      short_name: "Efluvio",
-      start_url: "/",
-      display: "standalone",
-      background_color: "#0E0A09",
-      theme_color: "#0E0A09",
-      icons: [
-        { src: "/favicon-180.png", sizes: "180x180", type: "image/png", purpose: "any" },
-        { src: "/favicon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
-      ],
-    };
-    const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    let link = document.querySelector('link[rel="manifest"]');
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "manifest";
-      document.head.appendChild(link);
-    }
-    link.href = url;
-
     // Detecta si ya está instalada (modo standalone)
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
@@ -414,7 +390,6 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalada);
-      URL.revokeObjectURL(url);
     };
   }, []);
 
