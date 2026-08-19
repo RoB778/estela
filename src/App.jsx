@@ -358,6 +358,27 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
     }
   }, [pantalla, perfumes.length, cargarPerfumes]);
 
+  // Estado de artículos reales de Supabase
+  const [articulos, setArticulos] = useState([]);
+  const [cargandoArticulos, setCargandoArticulos] = useState(false);
+
+  useEffect(function () {
+    if (pagina === "guia" && articulos.length === 0) {
+      setCargandoArticulos(true);
+      supabase
+        .from("articulos")
+        .select("slug, titulo, descripcion_corta, categoria, minutos_lectura, fecha_publicacion, tags")
+        .eq("estado", "publicado")
+        .order("fecha_publicacion", { ascending: false })
+        .then(function (resultado) {
+          if (!resultado.error) {
+            setArticulos(resultado.data || []);
+          }
+          setCargandoArticulos(false);
+        });
+    }
+  }, [pagina, articulos.length]);
+
   // ------------------------------------------------------------
   // INSTALACIÓN COMO APP (PWA)
   // El navegador dispara 'beforeinstallprompt' cuando la web cumple
@@ -1707,48 +1728,32 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
             Artículos escritos con criterio, no con patrocinio. Cada uno incluye comparativa de precios real y la voz de nuestro sommelier.
           </p>
 
-          <div
-            className="es-articulo-card"
-            onClick={() => window.open("/guia/mejores-perfumes-hombre", "_blank")}
-          >
-            <h3>Los mejores perfumes de hombre en 2026</h3>
-            <p>
-              Con comparativa de precio real entre Sephora, Druni y Amazon. Sin patrocinios, sin ordenar por comisión. El más barato, arriba.
-            </p>
-            <div className="es-meta">
-              Agosto 2026 · 8 min · 7 perfumes analizados
-            </div>
-          </div>
+          {cargandoArticulos && (
+            <p style={{ color: "#8A7E72", fontFamily: "var(--dato)", fontSize: 13 }}>Cargando articulos...</p>
+          )}
 
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Equivalencias de Dior Sauvage: todos los clones probados</h3>
-            <p>
-              De Armaf Ventana a Zara Seoul: cuáles se parecen de verdad y cuáles son humo. Con pirámide de notas y comparativa.
-            </p>
-            <div className="es-meta">
-              Próximamente
-            </div>
-          </div>
+          {!cargandoArticulos && articulos.length === 0 && (
+            <p style={{ color: "#8A7E72", fontSize: 15 }}>No hay articulos publicados todavia.</p>
+          )}
 
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Perfumería de nicho: guía para principiantes</h3>
-            <p>
-              Qué es un perfume de nicho, por qué cuesta lo que cuesta, y 5 recomendaciones para empezar sin arruinarte.
-            </p>
-            <div className="es-meta">
-              Próximamente
-            </div>
-          </div>
-
-          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
-            <h3>Los 5 mejores perfumes para regalar en Navidad 2026</h3>
-            <p>
-              Selección por presupuesto (30€, 60€, 100€, 150€+) con el comparador de precios integrado.
-            </p>
-            <div className="es-meta">
-              Noviembre 2026
-            </div>
-          </div>
+          {articulos.map(function (art) {
+            var fecha = art.fecha_publicacion
+              ? new Date(art.fecha_publicacion).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
+              : "";
+            return (
+              <div
+                key={art.slug}
+                className="es-articulo-card"
+                onClick={function () { window.location.href = "/guia/" + art.slug; }}
+              >
+                <h3>{art.titulo}</h3>
+                <p>{art.descripcion_corta}</p>
+                <div className="es-meta">
+                  {fecha} {art.minutos_lectura ? "· " + art.minutos_lectura + " min" : ""}
+                </div>
+              </div>
+            );
+          })}
 
           <div style={{ marginTop: 40, padding: "20px 24px", background: "#EDE7DC", borderLeft: "2.5px solid #C99A4E" }}>
             <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 8px" }}>
