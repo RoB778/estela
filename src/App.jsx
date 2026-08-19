@@ -358,26 +358,82 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
     }
   }, [pantalla, perfumes.length, cargarPerfumes]);
 
-  // Estado de artículos reales de Supabase
-  const [articulos, setArticulos] = useState([]);
-  const [cargandoArticulos, setCargandoArticulos] = useState(false);
+  // ------------------------------------------------------------
+  // INSTALACIÓN COMO APP (PWA)
+  // El navegador dispara 'beforeinstallprompt' cuando la web cumple
+  // los requisitos de instalación. Lo capturamos, guardamos el evento
+  // y mostramos nuestro propio botón. Al pulsarlo, disparamos el
+  // diálogo nativo del sistema. En iOS Safari no existe ese evento,
+  // así que ahí mostramos una instrucción manual.
+  // ------------------------------------------------------------
+  const [promptInstalar, setPromptInstalar] = useState(null);
+  const [yaInstalada, setYaInstalada] = useState(false);
+  const [mostrarAyudaIOS, setMostrarAyudaIOS] = useState(false);
 
-  useEffect(function () {
-    if (pagina === "guia" && articulos.length === 0) {
-      setCargandoArticulos(true);
-      supabase
-        .from("articulos")
-        .select("slug, titulo, descripcion_corta, categoria, minutos_lectura, fecha_publicacion, tags")
-        .eq("estado", "publicado")
-        .order("fecha_publicacion", { ascending: false })
-        .then(function (resultado) {
-          if (!resultado.error) {
-            setArticulos(resultado.data || []);
-          }
-          setCargandoArticulos(false);
-        });
+  useEffect(() => {
+    // Inyecta un manifest mínimo generado al vuelo, sin necesitar
+    // un archivo manifest.json externo en /public.
+    const manifest = {
+      name: "Efluvio — Sommelier de perfumería",
+      short_name: "Efluvio",
+      start_url: "/",
+      display: "standalone",
+      background_color: "#0E0A09",
+      theme_color: "#0E0A09",
+      icons: [
+        { src: "/favicon-180.png", sizes: "180x180", type: "image/png", purpose: "any" },
+        { src: "/favicon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+      ],
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    let link = document.querySelector('link[rel="manifest"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "manifest";
+      document.head.appendChild(link);
     }
-  }, [pagina, articulos.length]);
+    link.href = url;
+
+    // Detecta si ya está instalada (modo standalone)
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    setYaInstalada(standalone);
+
+    const onPrompt = (e) => {
+      e.preventDefault();
+      setPromptInstalar(e);
+    };
+    const onInstalada = () => {
+      setYaInstalada(true);
+      setPromptInstalar(null);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalada);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalada);
+      URL.revokeObjectURL(url);
+    };
+  }, []);
+
+  const instalarApp = useCallback(async () => {
+    if (promptInstalar) {
+      promptInstalar.prompt();
+      await promptInstalar.userChoice;
+      setPromptInstalar(null);
+      return;
+    }
+    // iOS Safari no soporta beforeinstallprompt: mostramos ayuda manual
+    const esIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+    if (esIOS) setMostrarAyudaIOS(true);
+  }, [promptInstalar]);
+
+  // Mostramos el botón si: hay prompt disponible (Android/Chrome/Edge)
+  // o es iOS (ayuda manual). Nunca si ya está instalada.
+  const esIOSNav = typeof window !== "undefined" && /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+  const puedeInstalar = !yaInstalada && (promptInstalar || esIOSNav);
 
   const pasoActivo =
     pantalla === "genero" ? 0 :
@@ -399,7 +455,13 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
         html, body {
           margin: 0; padding: 0; width: 100%;
           background: #0E0A09;
+          color: #EAE3D7;
           text-align: left;
+          /* Declara el esquema como oscuro para que Chrome/Samsung Internet
+             en modo oscuro forzado NO reescriban los colores del texto.
+             Sin esto, algunos Android pintan el texto en negro sobre el
+             fondo oscuro y la landing queda ilegible. */
+          color-scheme: dark;
         }
         body { display: block; place-items: normal; min-width: 0; }
         #root {
@@ -407,6 +469,7 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           margin: 0; padding: 0;
           display: block; place-items: normal;
           text-align: left;
+          color: #EAE3D7;
         }
 
         .es-root {
@@ -504,6 +567,45 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           border-bottom: 1px solid rgba(201,154,78,0.45);
           padding-bottom: 3px;
         }
+
+        /* Botón instalar app en la barra de navegación */
+        .es-instalar {
+          font-family: var(--dato); font-size: 9.5px; letter-spacing: 0.16em;
+          text-transform: uppercase; color: var(--oro);
+          background: transparent; border: 1px solid rgba(201,154,78,0.4);
+          padding: 7px 13px; cursor: pointer; border-radius: 0;
+          display: inline-flex; align-items: center; gap: 7px;
+          transition: background 380ms ease, border-color 380ms ease, color 380ms ease;
+        }
+        .es-instalar:hover { background: rgba(201,154,78,0.09); border-color: var(--oro); color: var(--oro-lit); }
+        .es-instalar svg { width: 12px; height: 12px; }
+
+        /* Modal de ayuda para instalación en iOS */
+        .es-ios-fondo {
+          position: fixed; inset: 0; z-index: 50;
+          background: rgba(14,10,9,0.82); backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex; align-items: center; justify-content: center; padding: 24px;
+        }
+        .es-ios-caja {
+          background: var(--ink-2); border: 1px solid var(--linea);
+          max-width: 420px; width: 100%; padding: 34px 30px 30px; position: relative;
+        }
+        .es-ios-caja h3 {
+          font-family: var(--display); font-variation-settings: 'opsz' 60; font-weight: 400;
+          font-size: 24px; color: var(--hueso); margin: 0 0 18px; letter-spacing: -0.01em;
+        }
+        .es-ios-caja ol { margin: 0; padding: 0 0 0 20px; }
+        .es-ios-caja li {
+          font-size: 15px; line-height: 1.7; color: var(--hueso-mute); margin-bottom: 12px;
+        }
+        .es-ios-caja li b { color: var(--oro-lit); font-weight: 400; }
+        .es-ios-cerrar {
+          position: absolute; top: 16px; right: 16px; background: none; border: 0;
+          color: var(--hueso-mute); font-size: 20px; cursor: pointer; line-height: 1;
+          padding: 4px;
+        }
+        .es-ios-cerrar:hover { color: var(--hueso); }
 
         /* Toggle de nicho integrado en paso género */
         .es-toggle-modo {
@@ -630,10 +732,11 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           font-family: var(--display); font-variation-settings: 'SOFT' 0, 'WONK' 1, 'opsz' 144;
           font-weight: 400; font-size: clamp(38px, 6.4vw, 76px); line-height: 1.04;
           letter-spacing: -0.02em; margin: 0; max-width: 15ch;
+          color: #EAE3D7;
         }
-        .es-titular em { font-style: italic; color: var(--oro-lit); }
+        .es-titular em { font-style: italic; color: #E2BE83; }
         .es-bajada {
-          font-size: 17px; line-height: 1.75; color: var(--hueso-mute);
+          font-size: 17px; line-height: 1.75; color: #9C9083;
           max-width: 46ch; margin: 30px 0 0;
         }
 
@@ -999,8 +1102,30 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
           >
             Comunidad
           </button>
+          {puedeInstalar && (
+            <button className="es-instalar" onClick={instalarApp} aria-label="Instalar Efluvio como app">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v12" /><path d="M7 10l5 5 5-5" /><path d="M5 21h14" />
+              </svg>
+              Instalar
+            </button>
+          )}
         </div>
       </nav>
+
+      {mostrarAyudaIOS && (
+        <div className="es-ios-fondo" onClick={() => setMostrarAyudaIOS(false)}>
+          <div className="es-ios-caja" onClick={(e) => e.stopPropagation()}>
+            <button className="es-ios-cerrar" onClick={() => setMostrarAyudaIOS(false)} aria-label="Cerrar">×</button>
+            <h3>Añadir a la pantalla de inicio</h3>
+            <ol>
+              <li>Toca el botón <b>Compartir</b> en la barra de Safari (el cuadrado con la flecha hacia arriba).</li>
+              <li>Baja y elige <b>Añadir a pantalla de inicio</b>.</li>
+              <li>Confirma con <b>Añadir</b>. Efluvio aparecerá como una app más.</li>
+            </ol>
+          </div>
+        </div>
+      )}
 
       {pasoActivo >= 0 && (
         <nav className="es-escalera" aria-label="Progreso">
@@ -1604,32 +1729,48 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
             Artículos escritos con criterio, no con patrocinio. Cada uno incluye comparativa de precios real y la voz de nuestro sommelier.
           </p>
 
-          {cargandoArticulos && (
-            <p style={{ color: "#8A7E72", fontFamily: "var(--dato)", fontSize: 13 }}>Cargando articulos...</p>
-          )}
+          <div
+            className="es-articulo-card"
+            onClick={() => window.open("/guia/mejores-perfumes-hombre", "_blank")}
+          >
+            <h3>Los mejores perfumes de hombre en 2026</h3>
+            <p>
+              Con comparativa de precio real entre Sephora, Druni y Amazon. Sin patrocinios, sin ordenar por comisión. El más barato, arriba.
+            </p>
+            <div className="es-meta">
+              Agosto 2026 · 8 min · 7 perfumes analizados
+            </div>
+          </div>
 
-          {!cargandoArticulos && articulos.length === 0 && (
-            <p style={{ color: "#8A7E72", fontSize: 15 }}>No hay articulos publicados todavia.</p>
-          )}
+          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
+            <h3>Equivalencias de Dior Sauvage: todos los clones probados</h3>
+            <p>
+              De Armaf Ventana a Zara Seoul: cuáles se parecen de verdad y cuáles son humo. Con pirámide de notas y comparativa.
+            </p>
+            <div className="es-meta">
+              Próximamente
+            </div>
+          </div>
 
-          {articulos.map(function (art) {
-            var fecha = art.fecha_publicacion
-              ? new Date(art.fecha_publicacion).toLocaleDateString("es-ES", { month: "long", year: "numeric" })
-              : "";
-            return (
-              <div
-                key={art.slug}
-                className="es-articulo-card"
-                onClick={function () { window.location.href = "/guia/" + art.slug; }}
-              >
-                <h3>{art.titulo}</h3>
-                <p>{art.descripcion_corta}</p>
-                <div className="es-meta">
-                  {fecha} {art.minutos_lectura ? "· " + art.minutos_lectura + " min" : ""}
-                </div>
-              </div>
-            );
-          })}
+          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
+            <h3>Perfumería de nicho: guía para principiantes</h3>
+            <p>
+              Qué es un perfume de nicho, por qué cuesta lo que cuesta, y 5 recomendaciones para empezar sin arruinarte.
+            </p>
+            <div className="es-meta">
+              Próximamente
+            </div>
+          </div>
+
+          <div className="es-articulo-card" style={{ opacity: 0.6, cursor: "default" }}>
+            <h3>Los 5 mejores perfumes para regalar en Navidad 2026</h3>
+            <p>
+              Selección por presupuesto (30€, 60€, 100€, 150€+) con el comparador de precios integrado.
+            </p>
+            <div className="es-meta">
+              Noviembre 2026
+            </div>
+          </div>
 
           <div style={{ marginTop: 40, padding: "20px 24px", background: "#EDE7DC", borderLeft: "2.5px solid #C99A4E" }}>
             <p style={{ fontFamily: "var(--dato)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "#8A7E72", margin: "0 0 8px" }}>
