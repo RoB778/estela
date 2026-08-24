@@ -1802,12 +1802,12 @@ export default function Efluvio({ initialPagina = "sommelier" }) {
               <p>Contenido visual, pirámides de notas, comparativas semanales.</p>
               <span className="es-red-link">Próximamente →</span>
             </div>
+           <a href="https://www.tiktok.com/@efluvioperfumes">
             <div className="es-red-card">
-              <a href="https://www.tiktok.com/@efluvioperfumes">
               <h3>TikTok</h3>
               <p>Dupes virales, recomendaciones rápidas, el clon que nadie conoce.</p>
-              </a>
             </div>
+              </a>
             <div className="es-red-card">
               <h3>Telegram</h3>
               <p>Canal con alertas de precio, lanzamientos y drops antes que nadie.</p>
