@@ -1,0 +1,24 @@
+{
+  "name": "Efluvio — Sommelier de perfumería",
+  "short_name": "Efluvio",
+  "description": "Sommelier de perfumería en España. Seis preguntas, perfumes que encajan de verdad.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0E0A09",
+  "theme_color": "#0E0A09",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/favicon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
